@@ -228,7 +228,7 @@ SET(HAVE_OpenGL disabled)
 
 SET(HAVE_OpenCL disabled)
 IF(ENABLE_OPENCL)
-  FIND_PACKAGE(OpenCL REQUIRED)
+  FIND_PACKAGE(OpenCL)
 
   SET(HAVE_OpenCL no)
   IF(OpenCL_FOUND)
