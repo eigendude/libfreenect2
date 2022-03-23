@@ -496,3 +496,11 @@ FOREACH(var ${vars})
     MESSAGE(STATUS "  ${feature}    ${${var}}")
   ENDIF()
 ENDFOREACH()
+
+#
+# Declare an ament package
+#
+
+CMAKE_POLICY(SET CMP0057 NEW)
+FIND_PACKAGE(ament_cmake REQUIRED)
+ament_package()
