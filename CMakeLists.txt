@@ -37,7 +37,7 @@ OPTION(BUILD_SHARED_LIBS "Build shared (ON) or static (OFF) libraries" OFF)
 OPTION(BUILD_EXAMPLES "Build examples" OFF)
 OPTION(BUILD_OPENNI2_DRIVER "Build OpenNI2 driver" ON)
 OPTION(ENABLE_CXX11 "Enable C++11 support" ON)
-OPTION(ENABLE_OPENCL "Enable OpenCL support" OFF)
+OPTION(ENABLE_OPENCL "Enable OpenCL support" ON)
 OPTION(ENABLE_CUDA "Enable CUDA support" OFF)
 OPTION(ENABLE_OPENGL "Enable OpenGL support" OFF) # TODO
 OPTION(ENABLE_VAAPI "Enable VA-API support" OFF)
@@ -227,6 +227,46 @@ ENDIF()
 SET(HAVE_OpenGL disabled)
 
 SET(HAVE_OpenCL disabled)
+IF(ENABLE_OPENCL)
+  FIND_PACKAGE(OpenCL)
+
+  SET(HAVE_OpenCL no)
+  IF(OpenCL_FOUND)
+    SET(LIBFREENECT2_WITH_OPENCL_SUPPORT 1)
+    SET(HAVE_OpenCL yes)
+
+    IF(UNIX AND NOT APPLE)
+      INCLUDE(CheckOpenCLICDLoader)
+      IF(OpenCL_C_WORKS AND NOT OpenCL_CXX_WORKS)
+        SET(LIBFREENECT2_OPENCL_ICD_LOADER_IS_OLD 1)
+        SET(HAVE_OpenCL "yes but buggy")
+        MESSAGE(WARNING "Your libOpenCL.so is incompatible with CL/cl.h. Install ocl-icd-opencl-dev to update libOpenCL.so?")
+      ENDIF()
+    ENDIF()
+    INCLUDE_DIRECTORIES(${OpenCL_INCLUDE_DIRS})
+
+    LIST(APPEND SOURCES
+      src/opencl_depth_packet_processor.cpp
+      src/opencl_kde_depth_packet_processor.cpp
+    )
+
+    LIST(APPEND LIBRARIES
+      ${OpenCL_LIBRARIES}
+    )
+
+    LIST(APPEND RESOURCES
+      src/opencl_depth_packet_processor.cl
+      src/opencl_kde_depth_packet_processor.cl
+    )
+
+    # Major Linux distro stable releases have buggy OpenCL ICD loader.
+    # The workaround of disabling exceptions can only be set up during compile time.
+    # Diabling it for all should be harmless. The flag is the same for GCC/Clang/ICC.
+    IF(UNIX AND NOT APPLE)
+      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+    ENDIF()
+  ENDIF(OpenCL_FOUND)
+ENDIF(ENABLE_OPENCL)
 
 SET(HAVE_CUDA disabled)
 
